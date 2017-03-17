@@ -48,13 +48,17 @@ app.use(serve(__dirname + '/../public',{
 }))
 
 app.use(convert(jwt({
-  secret: process.env.JWT_SECRET
+  // secret: process.env.JWT_SECRET
+   secret: Config.jwt.jwtSecret
 }).unless({
   path: [
-    `/${Config.apiversion}/test`,
-    `/${Config.apiversion}/user`,
-    `/${Config.apiversion}/user/hamburger_4798`,
-    `/${Config.apiversion}/user/token`
+    // `/${Config.apiversion}/test/QQQ/`,
+    // `/${Config.apiversion}/user`,
+    /^\/v1\/test/,
+    /^\/v1\/user/,
+    // `/${Config.apiversion}/user/token`,
+    // `/${Config.apiversion}/user/profile`,
+    // `/${Config.apiversion}/user`,
   ]
 })))
 

@@ -98,14 +98,15 @@ router.post('/',
   }
 )
 
-router.post(`/hamburger_4798`,
+router.post('/auth/:userID',
   validate({
-    // 'userID:body':['require', 'matches("_")','userID is required/not formatted'],
+    'userID:params':['require', 'matches("_")','userID is required/not formatted'],
     'code:body':['require', 'isAlphanumeric', 'code is required/not Alphanumeric'],
   }),
-  async(ctx,next)=>{
+  async (ctx,next)=>{
     try {
-      const userID = 'hamburger_4798'
+      console.log("TTTT")
+      const { userID } = ctx.params
       const { code } = ctx.request.body
       const userDBInfo = await User.findOneAndUpdate( { code }, {
         status: 1
@@ -187,4 +188,27 @@ router.post(`/token`,
     }
   }
 )
+
+
+router.get('/profile',
+  validate({
+    'size:header':['require','size is required']
+  }),
+  async(ctx, next) => {
+    try {
+      ctx.status = 200
+      ctx.response.body = {
+        status: "success"
+      }
+    } catch (err) {
+      if(err.output.statusCode){
+        ctx.throw(err.output.statusCode, err)
+      }else {
+        ctx.throw(500, err)
+      }
+    }
+  }
+)
+
+
 export default router

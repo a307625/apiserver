@@ -10,6 +10,7 @@ const config = {
   hostUrl: 'http://localhost:3000',
   databaseURI: 'mongodb://127.0.0.1:27017/apiserver',
   databaseOption: null,
+  usrtID: null,
 }
 
 

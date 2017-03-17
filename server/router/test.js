@@ -38,4 +38,29 @@ router.get('/',
   }
 )
 
+
+
+// router.get('/QQQ/:id',
+//   validate({
+//     'id:params':['require','id is required']
+//   }),
+//   async(ctx, next) => {
+//     try {
+//       console.log(ctx.params)
+//       ctx.status = 200
+//       ctx.response.body = {
+//         status: "success"
+//       }
+//     } catch (err) {
+//       console.log('error')
+//       console.log(err)
+//       if(err.output.statusCode){
+//         ctx.throw(err.output.statusCode, err)
+//       }else {
+//         ctx.throw(500, err)
+//       }
+//     }
+//   }
+// )
+
 export default router
