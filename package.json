@@ -21,7 +21,6 @@
     "koa-bodyparser": "^2.3.0",
     "koa-convert": "^1.2.0",
     "koa-jwt": "1.2.0",
-    "koa-params": "^1.1.0",
     "koa-req-validator": "0.1.4",
     "koa-router": "^7.0.1",
     "koa-static": "^3.0.0",
