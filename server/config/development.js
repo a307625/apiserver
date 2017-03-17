@@ -3,7 +3,7 @@ const config = {
   port: process.env.PORT || 3000,
   jwt: {
     jwtSecret: 'secretkey',// process.env.JWT_SECRET,
-    jwtTokenExpiresIn: '30 days',
+    jwtTokenExpiresIn: '5 days',
     emailTokenExpiresIn: '1 days'
   },
   apiversion: 'v1',

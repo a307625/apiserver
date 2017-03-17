@@ -98,92 +98,90 @@ router.post('/',
   }
 )
 
-router.post('/auth/:userID',
-  validate({
-    'userID:params':['require', 'matches("_")','userID is required/not formatted'],
-    'code:body':['require', 'isAlphanumeric', 'code is required/not Alphanumeric'],
-  }),
-  async (ctx,next)=>{
-    try {
-      console.log("TTTT")
-      const { userID } = ctx.params
-      const { code } = ctx.request.body
-      const userDBInfo = await User.findOneAndUpdate( { code }, {
-        status: 1
-      } )
-      if (userDBInfo) {
-        const { userID, status } = userDBInfo
-        ctx.status = 200
-        ctx.message = "success"
-        ctx.response.body = {
-          userID,
-          status
-        }
-      } else {
-        const NotAcceptable = '錯誤的驗證碼'
-        ctx.status = 406
-        ctx.message = "error"
-        ctx.response.body = {
-          error: NotAcceptable
-        }
-      }
-    } catch(err) {
-      if(err.output.statusCode){
-        ctx.throw(err.output.statusCode, err)
-      }else {
-        ctx.throw(500, err)
-      }
-    }
-  }
-)
-
-router.post(`/token`,
-  validate({
-    'userID:body':['require', 'matches("_")','userID is required/not formatted'],
-    'password:body':['require', 'isAlphanumeric', 'password is required/not Alphanumeric'],
-  }),
-  async(ctx,next)=>{
-    try {
-      const { userID, password } = ctx.request.body
-      const user = await User.findOne({ userID })
-      if (user) {
-        if (user.status) {
-          const check = await user.validatePassword( password )
-          if (check) {
-            const token = await Token( userID )
-            ctx.status = 200
-            ctx.message = "success"
-            ctx.response.body = {
-              token
+router.post('/:userID',
+  async(ctx, next)=>{
+    const { userID } = ctx.params
+    if( userID == 'token' ){
+      validate({
+        'userID:body':['require', 'matches("_")','userID is required/not formatted'],
+        'password:body':['require', 'isAlphanumeric', 'password is required/not Alphanumeric'],
+      })
+      try {
+        const { userID, password } = ctx.request.body
+        const user = await User.findOne({ userID })
+        if (user) {
+          if (user.status) {
+            const check = await user.validatePassword( password )
+            if (check) {
+              const token = await Token( userID )
+              ctx.status = 200
+              ctx.message = "success"
+              ctx.response.body = {
+                token
+              }
+            } else {
+              ctx.status = 400
+              ctx.message = "error"
+              ctx.response.body = {
+                error: '密碼錯誤'
+              }
             }
           } else {
-            ctx.status = 400
+            const Unauthorized = '尚未驗證行動電話'
+            ctx.status = 401
             ctx.message = "error"
             ctx.response.body = {
-              error: '密碼錯誤'
+              error: Unauthorized
             }
           }
         } else {
-          const Unauthorized = '尚未驗證行動電話'
-          ctx.status = 401
+          const UserNotFound = '用戶不存在'
+          ctx.status = 404
           ctx.message = "error"
           ctx.response.body = {
-            error: Unauthorized
+            error: UserNotFound
           }
         }
-      } else {
-        const UserNotFound = '用戶不存在'
-        ctx.status = 404
-        ctx.message = "error"
-        ctx.response.body = {
-          error: UserNotFound
+      } catch(err) {
+        if(err.output.statusCode){
+          ctx.throw(err.output.statusCode, err)
+        }else {
+          ctx.throw(500, err)
         }
       }
-    } catch(err) {
-      if(err.output.statusCode){
-        ctx.throw(err.output.statusCode, err)
-      }else {
-        ctx.throw(500, err)
+    }else {
+      validate({
+        'userID:params':['require', 'matches("_")','userID is required/not formatted'],
+        'code:body':['require', 'isAlphanumeric', 'code is required/not Alphanumeric'],
+      })
+      try {
+        const { userID } = ctx.params
+        const { code } = ctx.request.body
+        const userDBInfo = await User.findOneAndUpdate( { code }, {
+          status: 1
+        } )
+        if (userDBInfo) {
+          const { userID, status } = userDBInfo
+          ctx.status = 200
+          ctx.message = "success"
+          ctx.response.body = {
+            userID,
+            status
+          }
+        } else {
+          const NotAcceptable = '錯誤的驗證碼'
+          ctx.status = 406
+          ctx.message = "error"
+          ctx.response.body = {
+            error: NotAcceptable
+          }
+        }
+      } catch(err) {
+        if(err.output.statusCode){
+          ctx.throw(err.output.statusCode, err)
+        }else {
+          ctx.throw(500, err)
+        }
       }
     }
   }
