@@ -10,9 +10,17 @@ const userSchema  = new Schema({
     type: String,
     required: true
   },
+  email: {
+    type: String,
+    default: 'master_hsiao@gmail.com'
+  },
   phone: {
     type: String,
     required: true
+  },
+  type: {
+    type: String,
+    default: '0'
   },
   hashedpassword: {
     type: String
@@ -24,6 +32,22 @@ const userSchema  = new Schema({
   status: {
     type: Number,
     default: 0
+  },
+  token: {
+    type: String
+  },
+  deviceID: {
+    type: String
+  },
+  credit: {
+    currency: {
+      type: Number,
+      default: 0
+    },
+    bonus: {
+      type: Number,
+      default: 0
+    }
   }
 })
 

@@ -12,6 +12,7 @@ import Config from './config'
 
 import test from '../server/router/test'
 import user from '../server/router/user'
+import anchor from '../server/router/anchor'
 
 const app = new Koa()
 
@@ -54,8 +55,9 @@ app.use(convert(jwt({
   path: [
     // `/${Config.apiversion}/test/QQQ/`,
     // `/${Config.apiversion}/user`,
-    /^\/v1\/test/,
-    /^\/v1\/user/,
+    /^\/api\/v1\/test/,
+    /^\/api\/v1\/user/,
+    /^\/api\/v1\/anchor/,
     // `/${Config.apiversion}/user/token`,
     // `/${Config.apiversion}/user/profile`,
     // `/${Config.apiversion}/user`,
@@ -69,6 +71,11 @@ app.use(test.allowedMethods({
 
 app.use(user.routes())
 app.use(user.allowedMethods({
+  throw: true
+}))
+
+app.use(anchor.routes())
+app.use(anchor.allowedMethods({
   throw: true
 }))
 

@@ -4,11 +4,12 @@ import _validate from 'koa-req-validator'
 import Test from '../model/test'
 import Config from '../config'
 import User from '../model/user'
-import { Token } from '../utils/token'
+import Anchor from '../model/anchor'
+import { Token, TokenVerify } from '../utils/token'
 
 const validate = (...args) => convert(_validate(...args))
 const router = new Router({
-  prefix: `/${Config.apiversion}/user`
+  prefix: `/api/${Config.apiversion}/user`
 })
 
 // router.post('/',
@@ -57,6 +58,8 @@ const router = new Router({
 //   }
 // )
 
+
+//新增用戶
 router.post('/',
   validate({
     'userID:body':['require', 'matches("_")','userID is required/not formatted'],
@@ -98,105 +101,128 @@ router.post('/',
   }
 )
 
-router.post('/:userID',
+//取得用戶token
+router.post('/token',
+  validate({
+    'userID:body':['require', 'matches("_")','userID is required/not formatted'],
+    'password:body':['require', 'isAlphanumeric', 'password is required/not Alphanumeric'],
+    'deviceID:body':['require', 'isAlphanumeric', 'deviceID is required/not Alphanumeric']
+  }),
   async(ctx, next)=>{
-    const { userID } = ctx.params
-    if( userID == 'token' ){
-      validate({
-        'userID:body':['require', 'matches("_")','userID is required/not formatted'],
-        'password:body':['require', 'isAlphanumeric', 'password is required/not Alphanumeric'],
-      })
-      try {
-        const { userID, password } = ctx.request.body
-        const user = await User.findOne({ userID })
-        if (user) {
-          if (user.status) {
-            const check = await user.validatePassword( password )
-            if (check) {
-              const token = await Token( userID )
-              ctx.status = 200
-              ctx.message = "success"
-              ctx.response.body = {
-                token
-              }
-            } else {
-              ctx.status = 400
-              ctx.message = "error"
-              ctx.response.body = {
-                error: '密碼錯誤'
-              }
+    try {
+      const { userID, password, deviceID } = ctx.request.body
+      const user = await User.findOne({ userID })
+      if (user) {
+        if (user.status) {
+          const check = await user.validatePassword( password )
+          if (check) {
+            const token = await Token( userID )
+            await user.update({
+                token,
+                deviceID
+            })
+            ctx.status = 200
+            ctx.message = "success"
+            ctx.response.body = {
+              token
             }
           } else {
-            const Unauthorized = '尚未驗證行動電話'
-            ctx.status = 401
+            ctx.status = 400
             ctx.message = "error"
             ctx.response.body = {
-              error: Unauthorized
+              error: '密碼錯誤'
             }
           }
         } else {
-          const UserNotFound = '用戶不存在'
-          ctx.status = 404
+          const Unauthorized = '尚未驗證行動電話'
+          ctx.status = 401
           ctx.message = "error"
           ctx.response.body = {
-            error: UserNotFound
+            error: Unauthorized
           }
         }
-      } catch(err) {
-        if(err.output.statusCode){
-          ctx.throw(err.output.statusCode, err)
-        }else {
-          ctx.throw(500, err)
+      } else {
+        const UserNotFound = '用戶不存在'
+        ctx.status = 404
+        ctx.message = "error"
+        ctx.response.body = {
+          error: UserNotFound
         }
       }
-    }else {
-      validate({
-        'userID:params':['require', 'matches("_")','userID is required/not formatted'],
-        'code:body':['require', 'isAlphanumeric', 'code is required/not Alphanumeric'],
-      })
-      try {
-        const { userID } = ctx.params
-        const { code } = ctx.request.body
-        const userDBInfo = await User.findOneAndUpdate( { code }, {
-          status: 1
-        } )
-        if (userDBInfo) {
-          const { userID, status } = userDBInfo
-          ctx.status = 200
-          ctx.message = "success"
-          ctx.response.body = {
-            userID,
-            status
-          }
-        } else {
-          const NotAcceptable = '錯誤的驗證碼'
-          ctx.status = 406
-          ctx.message = "error"
-          ctx.response.body = {
-            error: NotAcceptable
-          }
-        }
-      } catch(err) {
-        if(err.output.statusCode){
-          ctx.throw(err.output.statusCode, err)
-        }else {
-          ctx.throw(500, err)
-        }
+    } catch(err) {
+      if(err.output.statusCode){
+        ctx.throw(err.output.statusCode, err)
+      }else {
+        ctx.throw(500, err)
       }
     }
   }
 )
 
-
-router.get('/profile',
+//認證用戶
+router.post('/auth/:userID',
   validate({
-    'size:header':['require','size is required']
+    'userID:params':['require', 'matches("_")','userID is required/not formatted'],
+    'code:body':['require', 'isAlphanumeric', 'code is required/not Alphanumeric'],
   }),
+  async(ctx, next)=>{
+    try {
+      const { userID } = ctx.params
+      const { code } = ctx.request.body
+      const userDBInfo = await User.findOneAndUpdate( { code }, {
+        status: 1
+      } )
+      if (userDBInfo) {
+        const { userID, status } = userDBInfo
+        ctx.status = 200
+        ctx.message = "success"
+        ctx.response.body = {
+          userID,
+          status
+        }
+      } else {
+        const NotAcceptable = '錯誤的驗證碼'
+        ctx.status = 406
+        ctx.message = "error"
+        ctx.response.body = {
+          error: NotAcceptable
+        }
+      }
+    } catch(err) {
+      if(err.output.statusCode){
+        ctx.throw(err.output.statusCode, err)
+      }else {
+        ctx.throw(500, err)
+      }
+    }
+  }
+)
+
+//取得用戶資訊
+router.get('/profile',
   async(ctx, next) => {
     try {
-      ctx.status = 200
-      ctx.response.body = {
-        status: "success"
+      const { authorization, deviceid} = ctx.request.header
+      const  userID  = await TokenVerify(authorization)
+      const user = await User.findOne({userID})
+      if (user) {
+        const { email, phone, type} = user
+        ctx.status = 200
+        ctx.response.body = {
+          profile: {
+            userID,
+            email,
+            phone,
+            type
+          }
+        }
+      }else {
+        const UserNotFound = '用戶不存在'
+        ctx.status = 404
+        ctx.message = "error"
+        ctx.response.body = {
+          error: UserNotFound
+        }
       }
     } catch (err) {
       if(err.output.statusCode){
@@ -208,5 +234,182 @@ router.get('/profile',
   }
 )
 
+//更新用戶資訊
+router.post('/profile',
+  async(ctx, next) => {
+    try {
+      const { authorization, deviceid} = ctx.request.header
+      const userID_t = await TokenVerify(authorization)
+      const userID_req = ctx.request.body.userID
+      const phone_req = ctx.request.body.phone
+      const email_req = ctx.request.body.email
+      let user = await User.findOne( { 'userID': userID_t } )
+      if (user) {
+        let token = user.token
+        let other_user = await User.findOne( { 'userID': userID_req } )
+        let re = /[_]{1}/
+        const check = re.test(userID_req)
+        if (other_user || (!check)) {
+          const NotAcceptable = '資料有誤，userID的格式不正確/userID重複'
+          ctx.status = 406
+          ctx.message = "error"
+          ctx.response.body = {
+            error: NotAcceptable
+          }
+        }else {
+          if(ctx.request.body){
+            if(userID_req) {
+              token = await Token( userID_req )
+            }
+            let status = 1
+            if (phone_req != (user.phone)) {
+              status = 0
+            }
+            await user.update({
+              ...ctx.request.body,
+              token,
+              status
+            })
+            if( (userID_req || email_req || phone_req) && user.type) {
+              const anchor = await Anchor.findOneAndUpdate ( { 'userID': userID_t}, {
+                'userID' : userID_req,
+                'anchorID': userID_req,
+                'profile': {
+                  'anchorID': userID_req,
+                  'email': email_req,
+                  'phone': phone_req,
+                  'name': anchor.profile.name,
+                  'description': anchor.profile.description,
+                  'fans': anchor.profile.fans,
+                  'imgs': anchor.profile.imgs,
+                  'mediaUrl0' : anchor.profile.mediaUrl0
+              })
+            }
+          }
+          const { _id } = user
+          const {userID, email, phone, type} = await User.findOne( { _id } )
+          ctx.status = 200
+          ctx.response.body = {
+            profile: {
+              userID,
+              email,
+              phone,
+              type
+            }
+          }
+        }
+
+      }else {
+        const UserNotFound = '用戶不存在'
+        ctx.status = 404
+        ctx.message = "error"
+        ctx.response.body = {
+          error: UserNotFound
+        }
+      }
+
+    } catch (err) {
+      if(err.output.statusCode){
+        ctx.throw(err.output.statusCode, err)
+      }else {
+        ctx.throw(500, err)
+      }
+    }
+  }
+)
+
+//取得用戶餘額
+router.get('/credit',
+  async(ctx, next) => {
+    try {
+      const { authorization, deviceid} = ctx.request.header
+      const userID = await TokenVerify(authorization)
+      const { credit } = await User.findOne({userID})
+      if (credit) {
+        ctx.status = 200
+        ctx.response.body = {
+          credit
+        }
+      }else {
+        const UserNotFound = '用戶不存在'
+        ctx.status = 404
+        ctx.message = "error"
+        ctx.response.body = {
+          error: UserNotFound
+        }
+      }
+
+    } catch (err) {
+      if(err.output.statusCode){
+        ctx.throw(err.output.statusCode, err)
+      }else {
+        ctx.throw(500, err)
+      }
+    }
+  }
+)
+
+//普通用戶申請成為主播
+router.post('/anchor',
+  // validate({
+  //   'name:body':['require', 'notEmpty()','name is required/not formatted'],
+  //   'description:body':['notEmpty()', 'notEmpty', 'description is required/not Alphanumeric'],
+  //   'imgs:body':['require', 'notEmpty()', 'description is required/not Alphanumeric'],
+  //   'mediaUrl:body':['require', 'notEmpty()', 'description is required/not Alphanumeric'],
+  // }),
+  async(ctx, next) => {
+    try {
+      const { authorization, deviceid} = ctx.request.header
+      const { name, description, imgs, mediaUrl} = ctx.request.body
+      const userID = await TokenVerify(authorization)
+      const userInfo = await User.findOne({userID})
+      const { email, phone, token, deviceID} = userInfo
+      let exist = await Anchor.findOne({userID})
+      if (userInfo) {
+        if (exist) {
+          const Conflict = `${userID}已經註冊過了`
+          ctx.status = 409
+          ctx.message = "error"
+          ctx.response.body = {
+            error: Conflict
+          }
+        }else {
+          let anchor = new Anchor({
+            userID,
+            anchorID : userID,
+            deviceID,
+            profile : {
+              anchorID : userID,
+              email,
+              phone,
+              ...ctx.request.body    　
+            }
+          })
+          await anchor.save()
+          await User.findOneAndUpdate( { userID }, {
+            type : 1
+          } )
+          ctx.status = 200
+          ctx.response.body = {
+            anchor
+          }
+        }
+      }else {
+        const UserNotFound = '用戶不存在'
+        ctx.status = 404
+        ctx.message = "error"
+        ctx.response.body = {
+          error: UserNotFound
+        }
+      }
+    } catch (err) {
+      if(err.output.statusCode){
+        ctx.throw(err.output.statusCode, err)
+      }else {
+        ctx.throw(500, err)
+      }
+    }
+  }
+)
 
 export default router

@@ -6,7 +6,7 @@ import Config from '../config'
 
 const validate = (...args) => convert(_validate(...args))
 const router = new Router({
-  prefix: `/${Config.apiversion}/test`
+  prefix: `/api/${Config.apiversion}/test`
 })
 
 router.get('/',
