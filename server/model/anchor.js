@@ -35,39 +35,29 @@ const userSchema  = new Schema({
   deviceID: {
     type: String
   },
-  profile: {
-    anchorID: {
-      type: String,
-      required: true
-    },
-    email: {
-      type: String,
-      required: true
-    },
-    phone: {
-      type: String,
-      required: true
-    },
-    name: {
-      type: String,
-      required: true
-    },
-    description: {
-      type: String,
-      required: true
-    },
-    fans: {
-      type: Number,
-      default: 0
-    },
-    imgs: {
-      type: String,
-      required: true
-    },
-    mediaUrl: {
-      type: String,
-      required: true
-    }
+  email: {
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String,
+    required: true
+  },
+  name: {
+    type: String
+  },
+  description: {
+    type: String
+  },
+  fans: {
+    type: Number,
+    default: 0
+  },
+  imgs: {
+    type: String
+  },
+  mediaUrl: {
+    type: String
   }
 })
 

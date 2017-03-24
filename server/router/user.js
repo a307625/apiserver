@@ -79,7 +79,7 @@ router.post('/',
           error: Conflict
         }
       } else {
-        const maxNum = 10000;
+        const maxNum = 10000
         const code = ('0000' + Math.floor(Math.random() * maxNum)).substr(-4)
         let user = new User({...ctx.request.body, code})
         await user.save()
@@ -245,11 +245,11 @@ router.post('/profile',
       const email_req = ctx.request.body.email
       let user = await User.findOne( { 'userID': userID_t } )
       if (user) {
-        let token = user.token
+        let { token, code} = user
         let other_user = await User.findOne( { 'userID': userID_req } )
         let re = /[_]{1}/
         const check = re.test(userID_req)
-        if (other_user || (!check)) {
+        if (userID_req && (other_user || (!check))) {
           const NotAcceptable = '資料有誤，userID的格式不正確/userID重複'
           ctx.status = 406
           ctx.message = "error"
@@ -257,32 +257,27 @@ router.post('/profile',
             error: NotAcceptable
           }
         }else {
-          if(ctx.request.body){
+          if( userID_req || phone_req || email_req ){
             if(userID_req) {
               token = await Token( userID_req )
             }
             let status = 1
+            console.log(phone_req)
+            console.log(user.phone)
             if (phone_req != (user.phone)) {
               status = 0
+              const maxNum = 10000
+              code = ('0000' + Math.floor(Math.random() * maxNum)).substr(-4)
             }
             await user.update({
               ...ctx.request.body,
               token,
+              code,
               status
             })
-            if( (userID_req || email_req || phone_req) && user.type) {
+            if( user.type ) {
               const anchor = await Anchor.findOneAndUpdate ( { 'userID': userID_t}, {
-                'userID' : userID_req,
-                'anchorID': userID_req,
-                'profile': {
-                  'anchorID': userID_req,
-                  'email': email_req,
-                  'phone': phone_req,
-                  'name': anchor.profile.name,
-                  'description': anchor.profile.description,
-                  'fans': anchor.profile.fans,
-                  'imgs': anchor.profile.imgs,
-                  'mediaUrl0' : anchor.profile.mediaUrl0
+                ...ctx.request.body
               })
             }
           }
@@ -298,7 +293,6 @@ router.post('/profile',
             }
           }
         }
-
       }else {
         const UserNotFound = '用戶不存在'
         ctx.status = 404
@@ -360,7 +354,7 @@ router.post('/anchor',
   async(ctx, next) => {
     try {
       const { authorization, deviceid} = ctx.request.header
-      const { name, description, imgs, mediaUrl} = ctx.request.body
+      // const { name, description, imgs, mediaUrl} = ctx.request.body
       const userID = await TokenVerify(authorization)
       const userInfo = await User.findOne({userID})
       const { email, phone, token, deviceID} = userInfo
@@ -378,13 +372,11 @@ router.post('/anchor',
             userID,
             anchorID : userID,
             deviceID,
-            profile : {
-              anchorID : userID,
-              email,
-              phone,
-              ...ctx.request.body    　
-            }
+            email,
+            phone,
+            ...ctx.request.body    　
           })
+          console.log(anchor)
           await anchor.save()
           await User.findOneAndUpdate( { userID }, {
             type : 1

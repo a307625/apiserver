@@ -21,10 +21,12 @@ router.get('/profile/:anchorID',
       const  userID  = await TokenVerify(authorization)
       const anchor = await Anchor.findOne({userID, anchorID})
       if (anchor) {
-        const { profile } = anchor
+        const { email, phone, name, description, fans, imgs, mediaUrl } = anchor
         ctx.status = 200
         ctx.response.body = {
-          profile
+          'profile':{
+            anchorID, email, phone, name, description, fans, imgs, mediaUrl
+          }
         }
       }else {
         const UserNotFound = '用戶不存在'
@@ -51,25 +53,97 @@ router.post('/profile',
       const { authorization, deviceid} = ctx.request.header
       const  userID_t  = await TokenVerify(authorization)
       const { profile } = ctx.request.body
-      const { userID, email, phone, name, description, imgs, mediaUrl } = profile
-      const anchor = await Anchor.findOne({'userID': userID_t})
-      if (anchor) {
-        let status = 1
-        if (phone != anchor.profile.phone) {
-          status = 0
+      if (profile){
+        let userID_r= profile.userID
+        let email_r = profile.email
+        let phone_r = profile.phone
+        const anchor = await Anchor.findOne({'userID': userID_t})
+        if (anchor) {
+          let other_user = await User.findOne( { 'userID': userID_r } )
+          let re = /[_]{1}/
+          const check = re.test(userID_r)
+          if (userID_r && (other_user || (!check))) {
+            const NotAcceptable = '資料有誤，userID的格式不正確/userID重複'
+            ctx.status = 406
+            ctx.message = "error"
+            ctx.response.body = {
+              error: NotAcceptable
+            }
+          }else {
+            await anchor.update({
+              ...profile
+            })
+            if (userID_r || email_r || phone_r) {
+              const user = await User.find({'userID': userID_t})
+              let { token, code } = user
+              if(userID_r) {
+                token = await Token( userID_r )
+              }
+              let status = 1
+              if ( phone_r != (anchor.phone) ) {
+                status = 0
+                const maxNum = 10000
+                code = ('0000' + Math.floor(Math.random() * maxNum)).substr(-4)
+              }
+              await User.findOneAndUpdate({'userID': userID_t}, {
+                ...profile,
+                token,
+                code,
+                status
+              })
+            }
+            const { _id } = anchor
+            const { anchorID, email, phone, name, description, fans, imgs, mediaUrl } = await Anchor.findOne( { _id } )
+            ctx.status = 200
+            ctx.response.body = {
+              'profile':{
+                anchorID,
+                email,
+                phone,
+                name,
+                description,
+                fans,
+                imgs,
+                mediaUrl
+              }
+            }
+          }
+        }else {
+          const UserNotFound = '用戶不存在'
+          ctx.status = 404
+          ctx.message = "error"
+          ctx.response.body = {
+            error: UserNotFound
+          }
         }
-        await User.findOneAndUpdate({'userID': userID_t}, {
-          userID,
-          email,
-          phone,
-          status
-        })
+      }
+    } catch (err) {
+      if(err.output.statusCode){
+        ctx.throw(err.output.statusCode, err)
+      }else {
+        ctx.throw(500, err)
+      }
+    }
+  }
+)
 
-        // const { profile } = anchor
-        // ctx.status = 200
-        // ctx.response.body = {
-        //   profile
-        // }
+router.get('/favor',
+  async(ctx, next) => {
+    try {
+      const { authorization, deviceid} = ctx.request.header
+      const  userID  = await TokenVerify(authorization)
+      const user = await User.findOne( { userID } )
+      const anchor = await Anchor.find( { } )
+      if (user) {
+        // const { email, phone, name, description, fans, imgs, mediaUrl } = anchor
+        console.log(Anchor.db.tree)
+        console.log(anchor)
+        ctx.status = 200
+        ctx.response.body = {
+          'profile'://{
+            'anchorID, email, phone, name, description, fans, imgs, mediaUrl'
+          //}
+        }
       }else {
         const UserNotFound = '用戶不存在'
         ctx.status = 404
@@ -87,4 +161,5 @@ router.post('/profile',
     }
   }
 )
+
 export default router
