@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 
-
 mongoose.Promise = global.Promise
 
 const Schema = mongoose.Schema
@@ -23,54 +22,64 @@ const Schema = mongoose.Schema
 //     "mediaUrl": "https://youtu.be/LklRHqfzR7I"
 //   }
 // }
-const anchorSchema  = new Schema({
+const roomSchema  = new Schema({
   userID: {
     type: String,
     required: true
   },
   anchorID: {
-    type: String,
-    required: true
+    type: String
   },
-  deviceID: {
-    type: String,
-    default: 'NULL'
+  room: {
+    roomID: {
+      type: String,
+      required: true
+    },
+    title: {
+      type: String,
+      required: true
+    },
+    imgUrl: {
+      type: String,
+      required: true
+    },
+    streamUrl: {
+      type: String,
+      required: true
+    },
+    streamKey: {
+      type: String,
+      required: true
+    }
   },
-  email: {
-    type: String,
-    required: true
-  },
-  phone: {
-    type: String,
-    required: true
-  },
-  name: {
-    type: String,
-    default: 'NULL'
-  },
-  description: {
-    type: String,
-    default: 'NULL'
-  },
-  fans: {
+  begin: {
     type: Number,
-    default: 0
+    require: true
   },
-  likes: {
-    type: Number,
-    default: 0
+  end: {
+    type: Number
   },
-  imgs: {
-    type: String,
-    default: 'NULL'
-  },
-  mediaUrl: {
-    type: String,
-    default: 'NULL'
+  profit: {
+    viewers: {
+      type: Number,
+      default: 0
+    },
+    likes: {
+      type: Number,
+      default: 0
+    },
+    giftIncome: {
+      type: Number,
+      default: 0
+    },
+    stake: {
+      type: Number,
+      default: 0
+    }
   }
 })
 
 
 
 
-export default mongoose.model('anchor', anchorSchema)
+export default mongoose.model('room', roomSchema)

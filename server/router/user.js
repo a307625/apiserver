@@ -225,11 +225,17 @@ router.get('/profile',
         }
       }
     } catch (err) {
-      if(err.output.statusCode){
-        ctx.throw(err.output.statusCode, err)
-      }else {
-        ctx.throw(500, err)
+      const UserNotFound = '用戶不存在'
+      ctx.status = 404
+      ctx.message = "error"
+      ctx.response.body = {
+        error: UserNotFound
       }
+      // if(err.output.statusCode){
+      //   ctx.throw(err.output.statusCode, err)
+      // }else {
+      //   ctx.throw(500, err)
+      // }
     }
   }
 )
@@ -276,7 +282,7 @@ router.post('/profile',
               status
             })
             if( user.type ) {
-              const anchor = await Anchor.findOneAndUpdate ( { 'userID': userID_t}, {
+              const anchor = await Anchor.findOneAndUpdate ( { userID: userID_t}, {
                 ...ctx.request.body
               })
             }
@@ -303,11 +309,17 @@ router.post('/profile',
       }
 
     } catch (err) {
-      if(err.output.statusCode){
-        ctx.throw(err.output.statusCode, err)
-      }else {
-        ctx.throw(500, err)
+      const UserNotFound = '用戶不存在'
+      ctx.status = 404
+      ctx.message = "error"
+      ctx.response.body = {
+        error: UserNotFound
       }
+      // if(err.output.statusCode){
+      //   ctx.throw(err.output.statusCode, err)
+      // }else {
+      //   ctx.throw(500, err)
+      // }
     }
   }
 )
@@ -334,11 +346,17 @@ router.get('/credit',
       }
 
     } catch (err) {
-      if(err.output.statusCode){
-        ctx.throw(err.output.statusCode, err)
-      }else {
-        ctx.throw(500, err)
+      const UserNotFound = '用戶不存在'
+      ctx.status = 404
+      ctx.message = "error"
+      ctx.response.body = {
+        error: UserNotFound
       }
+      // if(err.output.statusCode){
+      //   ctx.throw(err.output.statusCode, err)
+      // }else {
+      //   ctx.throw(500, err)
+      // }
     }
   }
 )
@@ -355,13 +373,15 @@ router.post('/anchor',
     try {
       const { authorization, deviceid} = ctx.request.header
       // const { name, description, imgs, mediaUrl} = ctx.request.body
+      const { anchorID } = ctx.request.body
       const userID = await TokenVerify(authorization)
       const userInfo = await User.findOne({userID})
       const { email, phone, token, deviceID} = userInfo
-      let exist = await Anchor.findOne({userID})
+      let exist_u = await Anchor.findOne({userID})
+      let exist_a = await Anchor.findOne({anchorID})
       if (userInfo) {
-        if (exist) {
-          const Conflict = `${userID}已經註冊過了`
+        if (exist_u || exist_a) {
+          const Conflict = `${userID}/${anchorID}已經註冊過了`
           ctx.status = 409
           ctx.message = "error"
           ctx.response.body = {
@@ -370,7 +390,7 @@ router.post('/anchor',
         }else {
           let anchor = new Anchor({
             userID,
-            anchorID : userID,
+            anchorID,
             deviceID,
             email,
             phone,
@@ -395,11 +415,17 @@ router.post('/anchor',
         }
       }
     } catch (err) {
-      if(err.output.statusCode){
-        ctx.throw(err.output.statusCode, err)
-      }else {
-        ctx.throw(500, err)
+      const UserNotFound = '用戶不存在'
+      ctx.status = 404
+      ctx.message = "error"
+      ctx.response.body = {
+        error: UserNotFound
       }
+      // if(err.output.statusCode){
+      //   ctx.throw(err.output.statusCode, err)
+      // }else {
+      //   ctx.throw(500, err)
+      // }
     }
   }
 )

@@ -11,10 +11,12 @@ export const TokenVerify = (token) => {
       if(err){
         reject(err)
       }
-      // console.log('decoded')
-      // console.log(decoded)
-      const userID = decoded.userID
-      resolve(userID)
+      if (decoded) {
+        const userID = decoded.userID
+        resolve(userID)
+      } else {
+        resolve(decoded)
+      }
     })
   })
 }

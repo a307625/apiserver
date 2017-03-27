@@ -19,8 +19,9 @@ router.get('/profile/:anchorID',
       const { authorization, deviceid} = ctx.request.header
       const { anchorID } = ctx.params
       const  userID  = await TokenVerify(authorization)
-      const anchor = await Anchor.findOne({userID, anchorID})
-      if (anchor) {
+      const anchor = await Anchor.findOne({anchorID})
+      const user = await User.findOne({userID})
+      if (anchor && user) {
         const { email, phone, name, description, fans, imgs, mediaUrl } = anchor
         ctx.status = 200
         ctx.response.body = {
@@ -37,11 +38,17 @@ router.get('/profile/:anchorID',
         }
       }
     } catch (err) {
-      if(err.output.statusCode){
-        ctx.throw(err.output.statusCode, err)
-      }else {
-        ctx.throw(500, err)
+      const UserNotFound = '用戶不存在'
+      ctx.status = 404
+      ctx.message = "error"
+      ctx.response.body = {
+        error: UserNotFound
       }
+      // if(err.output.statusCode){
+      //   ctx.throw(err.output.statusCode, err)
+      // }else {
+      //   ctx.throw(500, err)
+      // }
     }
   }
 )
@@ -118,15 +125,22 @@ router.post('/profile',
         }
       }
     } catch (err) {
-      if(err.output.statusCode){
-        ctx.throw(err.output.statusCode, err)
-      }else {
-        ctx.throw(500, err)
+      const UserNotFound = '用戶不存在'
+      ctx.status = 404
+      ctx.message = "error"
+      ctx.response.body = {
+        error: UserNotFound
       }
+      // if(err.output.statusCode){
+      //   ctx.throw(err.output.statusCode, err)
+      // }else {
+      //   ctx.throw(500, err)
+      // }
     }
   }
 )
 
+//取得追蹤主播清單
 router.get('/favor',
   async(ctx, next) => {
     try {
@@ -134,15 +148,16 @@ router.get('/favor',
       const  userID  = await TokenVerify(authorization)
       const user = await User.findOne( { userID } )
       const anchor = await Anchor.find( { } )
+      let favor = []
       if (user) {
-        // const { email, phone, name, description, fans, imgs, mediaUrl } = anchor
-        console.log(Anchor.db.tree)
-        console.log(anchor)
+        anchor.forEach((value)=>{
+          const { anchorID, email, phone, name, description, fans, imgs, mediaUrl } = value
+          let obj = { anchorID, email, phone, name, description, fans, imgs, mediaUrl }
+          favor.push(obj)
+        })
         ctx.status = 200
         ctx.response.body = {
-          'profile'://{
-            'anchorID, email, phone, name, description, fans, imgs, mediaUrl'
-          //}
+          favor
         }
       }else {
         const UserNotFound = '用戶不存在'
@@ -153,11 +168,63 @@ router.get('/favor',
         }
       }
     } catch (err) {
-      if(err.output.statusCode){
-        ctx.throw(err.output.statusCode, err)
-      }else {
-        ctx.throw(500, err)
+      const UserNotFound = '用戶不存在'
+      ctx.status = 404
+      ctx.message = "error"
+      ctx.response.body = {
+        error: UserNotFound
       }
+      // if(err.output.statusCode){
+      //   ctx.throw(err.output.statusCode, err)
+      // }else {
+      //   ctx.throw(500, err)
+      // }
+    }
+  }
+)
+
+router.put('/:anchorID/favor',
+  validate({
+      'isFavorite:body':['require', 'isBoolean', 'isFavorite is required/not Boolean'],
+    }),
+  async(ctx, next) => {
+    try {
+      const { authorization, deviceid} = ctx.request.header
+      const { isFavorite } = ctx.request.body
+      const { anchorID } = ctx.params
+      const  userID  = await TokenVerify(authorization)
+      const user = await User.findOne( { userID } )
+      const anchor = await Anchor.findOne( { anchorID } )
+      if (user && anchor) {
+        if (isFavorite) {
+          let favorite = []
+          favorite.push(anchorID)
+          await user.update({ favorite })
+          ctx.status = 200
+          ctx.response.body = {
+            isFavorite
+          }
+        }
+      }else {
+        const UserNotFound = '用戶不存在'
+        ctx.status = 404
+        ctx.message = "error"
+        ctx.response.body = {
+          error: UserNotFound
+        }
+      }
+    } catch (err) {
+      const UserNotFound = '用戶不存在'
+      ctx.status = 404
+      ctx.message = "error"
+      ctx.response.body = {
+        error: UserNotFound
+      }
+      // if(err.output.statusCode){
+      //   ctx.throw(err.output.statusCode, err)
+      // }else {
+      //   ctx.throw(500, err)
+      // }
     }
   }
 )

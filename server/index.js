@@ -13,6 +13,7 @@ import Config from './config'
 import test from '../server/router/test'
 import user from '../server/router/user'
 import anchor from '../server/router/anchor'
+import room from '../server/router/room'
 
 const app = new Koa()
 
@@ -58,6 +59,7 @@ app.use(convert(jwt({
     /^\/api\/v1\/test/,
     /^\/api\/v1\/user/,
     /^\/api\/v1\/anchor/,
+    /^\/api\/v1\/room/,
     // `/${Config.apiversion}/user/token`,
     // `/${Config.apiversion}/user/profile`,
     // `/${Config.apiversion}/user`,
@@ -76,6 +78,11 @@ app.use(user.allowedMethods({
 
 app.use(anchor.routes())
 app.use(anchor.allowedMethods({
+  throw: true
+}))
+
+app.use(room.routes())
+app.use(room.allowedMethods({
   throw: true
 }))
 
