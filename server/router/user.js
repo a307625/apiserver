@@ -268,8 +268,6 @@ router.post('/profile',
               token = await Token( userID_req )
             }
             let status = 1
-            console.log(phone_req)
-            console.log(user.phone)
             if (phone_req != (user.phone)) {
               status = 0
               const maxNum = 10000
@@ -363,12 +361,12 @@ router.get('/credit',
 
 //普通用戶申請成為主播
 router.post('/anchor',
-  // validate({
-  //   'name:body':['require', 'notEmpty()','name is required/not formatted'],
-  //   'description:body':['notEmpty()', 'notEmpty', 'description is required/not Alphanumeric'],
-  //   'imgs:body':['require', 'notEmpty()', 'description is required/not Alphanumeric'],
-  //   'mediaUrl:body':['require', 'notEmpty()', 'description is required/not Alphanumeric'],
-  // }),
+  validate({
+    'anchorID:body':['require', 'matches("_")','anchorID is required/not formatted'],
+    // 'description:body':['notEmpty()', 'notEmpty', 'description is required/not Alphanumeric'],
+    // 'imgs:body':['require', 'notEmpty()', 'description is required/not Alphanumeric'],
+    // 'mediaUrl:body':['require', 'notEmpty()', 'description is required/not Alphanumeric'],
+  }),
   async(ctx, next) => {
     try {
       const { authorization, deviceid} = ctx.request.header
@@ -396,7 +394,6 @@ router.post('/anchor',
             phone,
             ...ctx.request.body    　
           })
-          console.log(anchor)
           await anchor.save()
           await User.findOneAndUpdate( { userID }, {
             type : 1

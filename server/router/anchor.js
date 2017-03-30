@@ -183,6 +183,7 @@ router.get('/favor',
   }
 )
 
+//追蹤主播
 router.put('/:anchorID/favor',
   validate({
       'isFavorite:body':['require', 'isBoolean', 'isFavorite is required/not Boolean'],
@@ -195,11 +196,23 @@ router.put('/:anchorID/favor',
       const  userID  = await TokenVerify(authorization)
       const user = await User.findOne( { userID } )
       const anchor = await Anchor.findOne( { anchorID } )
+      console.log("QQ")
       if (user && anchor) {
         if (isFavorite) {
-          let favorite = []
-          favorite.push(anchorID)
-          await user.update({ favorite })
+          let { fans } = anchor
+          let { favorite } = user
+          console.log("QQ1")
+          const exist = favorite.find((value)=>{
+            return value == anchorID
+          })
+          if (!exist) {
+            favorite.push(anchorID)
+            fans++
+            await user.update({ favorite })
+            await Anchor.findOneAndUpdate({anchorID}, {
+              fans
+            })
+          }
           ctx.status = 200
           ctx.response.body = {
             isFavorite
